@@ -47,7 +47,7 @@ void cb_pop_front(circular_buffer *cb, void *item)
 {
     if(cb->count == 0)
     {
-        printf("Access violation. Buffer is empy\n");
+        printf("Access violation. Buffer is empty\n");
         exit(1);
     }
     memcpy(item, cb->tail, cb->sz);

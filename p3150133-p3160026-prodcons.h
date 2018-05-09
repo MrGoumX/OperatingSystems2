@@ -22,8 +22,14 @@ typedef struct producer_info
 {
     int id;
     int size_of_production;
-    int seed;
+    unsigned int seed;
 } producer_info;
+
+typedef  struct consumer_info
+{
+    int count;
+    int *consumed;
+} consumer_info;
 
 
 void cb_init(circular_buffer *cb, size_t capacity, size_t sz);
@@ -35,4 +41,6 @@ void cb_push_back(circular_buffer *cb, const void *item);
 void cb_pop_front(circular_buffer *cb, void *item);
 
 void *producer(void *args);
+
+void *consumer(void *args);
 #endif //OPERATINGSYSTEMS2_P3150133_P3160026_PRODCONS_H
