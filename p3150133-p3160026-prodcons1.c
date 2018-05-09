@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <unistd.h>
 #include "p3150133-p3160026-prodcons.h"
 
 circular_buffer circ_buff;
@@ -13,6 +14,7 @@ pthread_mutex_t mutex;
 pthread_cond_t prod_condition, cons_condition;
 int finished = 0;
 int prod;
+int prods, cons;
 
 int main(int argc, char** argv){
     if(argv[1] == NULL || argv[2] == NULL || argv[3] == NULL || argv[4] == NULL || argv[5] == NULL){
@@ -66,6 +68,7 @@ int main(int argc, char** argv){
         info->size_of_production = &size_of_production;
         info->seed = &seed;*/
         producer_info info;
+        printf("%d\n", producers_id[i]);
         info.id = producers_id[i];
         info.size_of_production = size_of_production;
         info.seed = seed;
@@ -133,7 +136,7 @@ void *producer(void *args){
     int rc;
     for(int i = 0; i < size_of_production; i++){
         pthread_mutex_lock(&mutex);
-        while(circ_buff.count == circ_buff.capacity){
+        while(prods == cons){
             rc = pthread_cond_wait(&prod_condition, &mutex);
             if(rc != 0){
                 printf("Error: %d\n", rc);
@@ -150,12 +153,13 @@ void *producer(void *args){
             printf("Error: %d\n", rc);
             pthread_exit(&rc);
         }
-
+        pthread_cond_signal(&cons_condition);
         rc = pthread_mutex_unlock(&mutex);
         if(rc != 0){
             printf("Error: %d\n", rc);
             pthread_exit(&rc);
         }
+        sleep(1);
     }
     finished++;
     //return (void *)produced;
@@ -168,10 +172,10 @@ void *consumer(void *args){
     int rc;
     int *consumed = malloc(sizeof(int));
     int counter = 0;
-    while(circ_buff.count!=0){
+    while(circ_buff.head != circ_buff.buffer || circ_buff.head == circ_buff.buffer){
         pthread_mutex_lock(&mutex);
         while(circ_buff.count == 0){
-            //rc = pthread_cond_wait(&cons_condition, &mutex);
+            rc = pthread_cond_wait(&cons_condition, &mutex);
             if(rc != 0){
                 printf("Error: %d\n", rc);
                 pthread_exit(&rc);
@@ -189,12 +193,13 @@ void *consumer(void *args){
             printf("Error: %d\n", rc);
             pthread_exit(&rc);
         }
-
+        pthread_cond_signal(&prod_condition);
         rc = pthread_mutex_unlock(&mutex);
         if(rc != 0){
             printf("Error: %d\n", rc);
             pthread_exit(&rc);
         }
+        sleep(1);
     }
     int cons_stat[counter];
     for(int i = 0; i < counter; i++){
