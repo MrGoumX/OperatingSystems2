@@ -136,6 +136,14 @@ int main(int argc, char** argv){
         }
     }
 
+    for(i = 0; i < number_of_producers; i++){
+        free(prod_ret[i].consumed);
+    }
+
+    for(i = 0; i < number_of_consumers; i++){
+        free(cons_ret[i].consumed);
+    }
+
     fclose(in);
     fclose(out);
 
