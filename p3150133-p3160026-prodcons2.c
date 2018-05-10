@@ -158,7 +158,7 @@ int main(int argc, char** argv){
         exit(-1);
     }
 
-    //destroy producers condtion
+    //destroy producers condition
     rc = pthread_cond_destroy(&prod_condition);
     if(rc != 0){
         printf("Error: %d\n", rc);
