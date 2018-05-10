@@ -118,6 +118,30 @@ int main(int argc, char** argv){
         ret = *(thread_ret*)status;
         cons_ret[i] = ret;
     }
+    int k, l, min_idx;
+    for (k = 0; k < number_of_producers-1; k++) {
+        min_idx = k;
+        for (l = k+1; l < number_of_producers; l++) {
+            if (prod_ret[l].id < prod_ret[min_idx].id) {
+                min_idx = l;
+            }
+        }
+        thread_ret *temp = &prod_ret[i];
+        prod_ret[i] = prod_ret[min_idx];
+        prod_ret[min_idx] = *temp;
+    }
+
+    for (k = 0; k < number_of_consumers-1; k++) {
+        min_idx = k;
+        for (l = k+1; l < number_of_consumers; l++) {
+            if (cons_ret[l].id < cons_ret[min_idx].id) {
+                min_idx = l;
+            }
+        }
+        thread_ret *temp = &cons_ret[i];
+        cons_ret[i] = cons_ret[min_idx];
+        cons_ret[min_idx] = *temp;
+    }
 
     for(i = 0; i < number_of_producers; i++){
         printf("Producer %d: ", prod_ret[i].id);

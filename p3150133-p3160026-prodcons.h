@@ -25,11 +25,12 @@ typedef struct producer_info
     unsigned int seed;
 } producer_info;
 
-typedef  struct consumer_info
+typedef struct thread_ret
 {
+    int id;
     int count;
     int *consumed;
-} consumer_info;
+} thread_ret;
 
 
 void cb_init(circular_buffer *cb, size_t capacity, size_t sz);
