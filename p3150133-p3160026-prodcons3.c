@@ -166,7 +166,7 @@ int main(int argc, char** argv){
 
     //print to console
     for(i = 0; i < number_of_producers; i++){
-        printf("Producer %d: ", prod_ret[i].id);
+        printf("Producer %d: ", producers_id[i]);
         for(int j = 0; j < size_of_production; j++){
             printf("%d", prod_ret[i].consumed[j]);
             printf((j != size_of_production-1) ? ", " : "\n");
