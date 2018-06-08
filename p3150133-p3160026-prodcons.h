@@ -25,14 +25,6 @@ typedef struct producer_info
     unsigned int seed;
 } producer_info;
 
-typedef struct thread_ret
-{
-    int id;
-    int count;
-    int *consumed;
-} thread_ret;
-
-
 void cb_init(circular_buffer *cb, size_t capacity, size_t sz);
 
 void cb_free(circular_buffer *cb);
