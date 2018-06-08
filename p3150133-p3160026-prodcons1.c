@@ -7,9 +7,9 @@
 #include "p3150133-p3160026-prodcons.h"
 
 circular_buffer circ_buff; // Circular Buffer
-pthread_mutex_t mutex, p_mut; // Mutex for the buffer
+pthread_mutex_t mutex, p_mut; // Mutex for the buffer, printing result mutex
 pthread_cond_t prod_condition, cons_condition; // Conditions for producers and consumers
-int counter, cons, p_p, c_p, number_of_producers, number_of_consumers; // counter: general counter for the consumers oreration, cons: total amount of item to be produced
+int counter, cons, p_p, c_p, number_of_producers, number_of_consumers; // counter: general counter for the consumers oreration, cons: total amount of item to be produced, p_p: producers print counter, c_p: consumers print counter
 FILE *in, *out; // in: prod_in.txt, out: cons_out.txt
 
 //main thread
@@ -20,8 +20,6 @@ int main(int argc, char** argv){
         exit(-1);
     }
     //Variable definition
-    //int number_of_producers;
-    //int number_of_consumers;
     int size_of_queue;
     int size_of_production;
     unsigned int seed;
@@ -70,6 +68,7 @@ int main(int argc, char** argv){
         exit(-1);
     }
 
+    //printing mutex initialization
     rc = pthread_mutex_init(&p_mut, NULL);
     if(rc != 0){
         printf("Error: %d\n", rc);
@@ -152,7 +151,7 @@ int main(int argc, char** argv){
         exit(-1);
     }
 
-    //destroy producers condtion
+    //destroy producers condition
     rc = pthread_cond_destroy(&prod_condition);
     if(rc != 0){
         printf("Error: %d\n", rc);
@@ -232,14 +231,11 @@ void *producer(void *args){
         pthread_mutex_unlock(&p_mut);
         p_p++;
         break;
-        /*if(p_p == number_of_producers){
-            break;
-        }*/
     }
     //free memory from arguments
     free(r_args);
     //exit thread
-    pthread_exit(0);
+    pthread_exit(NULL);
 
 }
 
@@ -310,6 +306,6 @@ void *consumer(void *args){
         }
     }
     //exit thread
-    pthread_exit(0);
+    pthread_exit(NULL);
 
 }

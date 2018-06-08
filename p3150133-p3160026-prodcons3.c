@@ -9,7 +9,7 @@
 circular_buffer circ_buff; // Circular Buffer
 pthread_mutex_t mutex, p_mut; // Mutex for the buffer
 pthread_cond_t prod_condition, cons_condition; // Conditions for producers and consumers
-int counter, cons, p_p, c_p, number_of_producers, number_of_consumers; // counter: general counter for the consumers oreration, cons: total amount of item to be produced
+int counter, cons, p_p, c_p, number_of_producers, number_of_consumers; // counter: general counter for the consumers oreration, cons: total amount of item to be produced, p_p: producers print counter, c_p: consumers print counter
 FILE *in, *out; // in: prod_in.txt, out: cons_out.txt
 
 //main thread
@@ -20,8 +20,6 @@ int main(int argc, char** argv){
         exit(-1);
     }
     //Variable definition
-    /*int number_of_producers;
-    int number_of_consumers;*/
     int size_of_queue;
     int size_of_production;
     unsigned int seed;
@@ -220,7 +218,6 @@ void *producer(void *args){
             pthread_exit(&rc);
         }
         //sleep for 1 ms
-        //sleep(1);
         usleep(1);
     }
     //free memory from arguments
@@ -242,7 +239,7 @@ void *producer(void *args){
         }
     }
     //exit thread and return the struct info with it
-    pthread_exit(0);
+    pthread_exit(NULL);
 
 }
 
@@ -294,7 +291,6 @@ void *consumer(void *args){
             pthread_exit(&rc);
         }
         //sleep for 1 ms
-        //sleep(1);
         usleep(1);
     }
     while(1){
@@ -319,6 +315,6 @@ void *consumer(void *args){
         }
     }
     //exit thread and return the struct info with it
-    pthread_exit(0);
+    pthread_exit(NULL);
 
 }
