@@ -7,9 +7,9 @@
 #include "p3150133-p3160026-prodcons.h"
 
 circular_buffer circ_buff; // Circular Buffer
-pthread_mutex_t mutex; // Mutex for the buffer
+pthread_mutex_t mutex, p_mut; // Mutex for the buffer
 pthread_cond_t prod_condition, cons_condition; // Conditions for producers and consumers
-int counter, cons; // counter: general counter for the consumers oreration, cons: total amount of item to be produced
+int counter, cons, p_p, c_p, number_of_producers, number_of_consumers; // counter: general counter for the consumers oreration, cons: total amount of item to be produced
 FILE *in, *out; // in: prod_in.txt, out: cons_out.txt
 
 //main thread
@@ -20,8 +20,8 @@ int main(int argc, char** argv){
         exit(-1);
     }
     //Variable definition
-    int number_of_producers;
-    int number_of_consumers;
+    /*int number_of_producers;
+    int number_of_consumers;*/
     int size_of_queue;
     int size_of_production;
     unsigned int seed;
@@ -70,6 +70,13 @@ int main(int argc, char** argv){
         exit(-1);
     }
 
+    //printing mutex initialization
+    rc = pthread_mutex_init(&p_mut, NULL);
+    if(rc != 0){
+        printf("Error: %d\n", rc);
+        exit(-1);
+    }
+
     //producers condition initialization
     prod_condition_init = pthread_cond_init(&prod_condition, NULL);
     if(prod_condition_init != 0){
@@ -110,86 +117,22 @@ int main(int argc, char** argv){
         }
     }
 
-    //arrays for each producer and consumer for their return struct values
-    thread_ret prod_ret[number_of_producers];
-    thread_ret cons_ret[number_of_consumers];
     //producers threads join
-    void *status;
-    for(i = 0; i < number_of_producers; i++){
-        thread_ret ret;
-        rc = pthread_join(producers[i], &status);
+    for(int i = 0; i < number_of_producers; i++){
+        rc = pthread_join(producers[i], NULL);
         if(rc != 0){
-            printf("Error: %d\n", rc);
+            printf("Error %d\n", rc);
             exit(-1);
         }
-        ret = *(thread_ret*)status;
-        prod_ret[i] = ret;
     }
 
     //consumers threads join
-    for(i = 0; i < number_of_consumers; i++){
-        thread_ret ret;
-        rc = pthread_join(consumers[i], &status);
+    for(int i = 0; i < number_of_consumers; i++){
+        rc = pthread_join(consumers[i], NULL);
         if(rc != 0){
-            printf("Error: %d\n", rc);
+            printf("Error %d\n", rc);
             exit(-1);
         }
-        ret = *(thread_ret*)status;
-        cons_ret[i] = ret;
-    }
-
-    //sort the arrays just to be sure that producers and consumers are going to be printed in order their id
-    int k, l, min_idx;
-    for (k = 0; k < number_of_producers-1; k++) {
-        min_idx = k;
-        for (l = k+1; l < number_of_producers; l++) {
-            if (prod_ret[l].id < prod_ret[min_idx].id) {
-                min_idx = l;
-            }
-        }
-        thread_ret *temp = &prod_ret[i];
-        prod_ret[i] = prod_ret[min_idx];
-        prod_ret[min_idx] = *temp;
-    }
-
-    for (k = 0; k < number_of_consumers-1; k++) {
-        min_idx = k;
-        for (l = k+1; l < number_of_consumers; l++) {
-            if (cons_ret[l].id < cons_ret[min_idx].id) {
-                min_idx = l;
-            }
-        }
-        thread_ret *temp = &cons_ret[i];
-        cons_ret[i] = cons_ret[min_idx];
-        cons_ret[min_idx] = *temp;
-    }
-
-    //print to console
-    for(i = 0; i < number_of_producers; i++){
-        printf("Producer %d: ", producers_id[i]);
-        for(int j = 0; j < size_of_production; j++){
-            printf("%d", prod_ret[i].consumed[j]);
-            printf((j != size_of_production-1) ? ", " : "\n");
-        }
-    }
-
-    for(i = 0; i < number_of_consumers; i++){
-        printf("Consumer %d: ", cons_ret[i].id);
-        int fin = cons_ret[i].count;
-        for(int j = 0; j < fin; j++){
-            printf("%d", cons_ret[i].consumed[j]);
-            printf((j != fin-1) ? ", " : "\n");
-        }
-    }
-
-    //free memory from previous array prod_ret
-    for(i = 0; i < number_of_producers; i++){
-        free(prod_ret[i].consumed);
-    }
-
-    //free memory from previous array cons_ret
-    for(i = 0; i < number_of_consumers; i++){
-        free(cons_ret[i].consumed);
     }
 
     //close files
@@ -198,6 +141,13 @@ int main(int argc, char** argv){
 
     //destroy mutex
     rc = pthread_mutex_destroy(&mutex);
+    if(rc != 0){
+        printf("Error: %d\n", rc);
+        exit(-1);
+    }
+
+    //destroy print mutex
+    rc = pthread_mutex_destroy(&p_mut);
     if(rc != 0){
         printf("Error: %d\n", rc);
         exit(-1);
@@ -246,7 +196,6 @@ void *producer(void *args){
                 printf("Error: %d\n", rc);
                 pthread_exit(&rc);
             }
-            printf("The queue is full\n");
         }
         //produce random
         int ran = rand_r(&seed);
@@ -271,17 +220,29 @@ void *producer(void *args){
             pthread_exit(&rc);
         }
         //sleep for 1 ms
-        sleep(1);
+        //sleep(1);
+        usleep(1);
     }
     //free memory from arguments
     free(r_args);
-    //allocate memory for struct to return the array produced and other stuff
-    thread_ret *info = malloc(sizeof(*info));
-    info->id = id;
-    info->count = size_of_production;
-    info->consumed = produced;
+    while(c_p == NULL){
+        if(id == p_p+1){
+            pthread_mutex_lock(&p_mut);
+            printf("Producer %d: ", id);
+            for(int j = 0; j < size_of_production; j++) {
+                printf("%d", produced[j]);
+                printf((j != size_of_production - 1) ? ", " : "\n");
+            }
+            pthread_mutex_unlock(&p_mut);
+            p_p++;
+            break;
+        }
+        else{
+            pthread_cond_broadcast(&prod_condition);
+        }
+    }
     //exit thread and return the struct info with it
-    pthread_exit(info);
+    pthread_exit(0);
 
 }
 
@@ -306,7 +267,6 @@ void *consumer(void *args){
                 printf("Error: %d\n", rc);
                 pthread_exit(&rc);
             }
-            printf("The queue is empty\n");
         }
         //consume number
         int poped;
@@ -334,14 +294,31 @@ void *consumer(void *args){
             pthread_exit(&rc);
         }
         //sleep for 1 ms
-        sleep(1);
+        //sleep(1);
+        usleep(1);
     }
-    //allocate memory for struct to return the array consumed and other stuff
-    thread_ret *info = malloc(sizeof(*info));
-    info->id = id;
-    info->count = thr_count;
-    info->consumed = consumed;
+    while(1){
+        if(p_p == number_of_producers){
+            if(id == c_p+1){
+                pthread_mutex_lock(&p_mut);
+                printf("Consumer %d: ", id);
+                for(int j = 0; j < thr_count; j++){
+                    printf("%d", consumed[j]);
+                    printf((j != thr_count-1) ? ", " : "\n");
+                }
+                c_p++;
+                pthread_mutex_unlock(&p_mut);
+                break;
+            }
+            else{
+                pthread_cond_broadcast(&cons_condition);
+            }
+        }
+        else{
+            pthread_cond_broadcast(&prod_condition);
+        }
+    }
     //exit thread and return the struct info with it
-    pthread_exit(info);
+    pthread_exit(0);
 
 }
